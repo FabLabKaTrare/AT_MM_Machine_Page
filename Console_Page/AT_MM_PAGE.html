@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Control Clasificador M&M's</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css" />
+  <style>
+    #log {
+      height: 300px;
+      overflow-y: auto;
+      background-color: #212529;
+      color: #f8f9fa;
+      font-family: monospace;
+      padding: 10px;
+      border-radius: 5px;
+      white-space: pre-wrap;
+    }
+
+    .log-entry {
+      margin-bottom: 5px;
+    }
+
+    .color-R {
+      background-color: #dc3545;
+    }
+
+    /* Rojo */
+    .color-G {
+      background-color: #28a745;
+    }
+
+    /* Verde */
+    .color-Y {
+      background-color: #ffc107;
+    }
+
+    /* Amarillo */
+    .color-B {
+      background-color: #007bff;
+    }
+
+    /* Azul */
+    .color-O {
+      background-color: #fd7e14;
+    }
+
+    .color-D {
+      background-color: #6c757d;
+    }
+
+    /* Naranja */
+    .color-box {
+      width: 25px;
+      height: 25px;
+      border: 1px solid #dee2e6;
+      border-radius: 50%;
+    }
+
+    .text-muted {
+      font-size: 0.8rem;
+      opacity: 0.8;
+    }
+
+    /* Estilos para versión compacta */
+    .card-header h3 {
+      font-size: 1.1rem;
+      font-weight: 500;
+    }
+
+    #currentMode,
+    #currentState,
+    #connectionStatus {
+      font-size: 0.92rem;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    } 
+    /* Estilos para los botones de comandos */
+    .command-btn {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Estilos para el dropdown de colores */
+    .dropdown-item.color-option {
+      padding: 0.5rem 1rem;
+    }
+
+    /* Indicadores visuales para colores */
+    .dropdown-item[data-value="0"] {
+      color: #dc3545;
+    }
+
+    /* Rojo */
+    .dropdown-item[data-value="1"] {
+      color: #28a745;
+    }
+
+    /* Verde */
+    .dropdown-item[data-value="2"] {
+      color: #ffc107;
+    }
+
+    /* Amarillo */
+    .dropdown-item[data-value="3"] {
+      color: #007bff;
+    }
+
+    /* Azul */
+    .dropdown-item[data-value="4"] {
+      color: #fd7e14;
+    }
+
+    /* Naranja */
+    .dropdown-item[data-value="5"] {
+      color: #6c757d;
+    }
+
+    /* Desecho */
+  </style>
+</head>
+
+<body>
+  <div class="container py-4">
+    <h1 class="text-center mb-4">Clasificador de M&M's</h1>
+
+    <!-- Sección Compacta Combinada - Versión Mejorada -->
+    <div class="card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h3 class="mb-0">Estado del Sistema</h3>
+        <div>
+          <button id="connectBtn" class="btn btn-primary mb-2">
+            <i class="bi bi-bluetooth"></i> Conectar
+          </button>
+          <button id="disconnectBtn" class="btn btn-sm btn-outline-danger">
+            <i class="bi bi-bluetooth-off">Desconectar</i>
+          </button>
+        </div>
+      </div>
+      <div class="card-body py-2">
+        <div class="row">
+          <div class="col-md-4 border-end">
+            <div class="d-flex align-items-center">
+              <span class="badge bg-info me-2">Modo:</span>
+              <span id="currentMode" class="small">No especificado</span>
+            </div>
+          </div>
+          <div class="col-md-4 border-end">
+            <div class="d-flex align-items-center">
+              <span class="badge bg-warning me-2">Estado:</span>
+              <span id="currentState" class="small">Desconocido</span>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="d-flex align-items-center">
+              <span class="badge bg-success me-2">Conexión:</span>
+              <span id="connectionStatus" class="small text-danger">No conectado</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel de Clasificación -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <h3>Clasificación de M&M's</h3>
+      </div>
+      <div class="card-body" id="classificationContainer">
+        <div id="systemModeView" style="display: none">
+          <h5>Objetivo del Sistema</h5>
+          <div id="systemTarget"></div>
+        </div>
+        <div id="userModeView" style="display: none">
+          <h5>Conteo Actual</h5>
+          <div id="userCount"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel de Comandos -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5>Comandos</h5>
+      </div>
+      <div class="card-body">
+        <div class="row g-2">
+          <!-- Primera fila de botones -->
+          <div class="col-md-4">
+            <button class="btn btn-outline-primary w-100 command-btn" data-cmd="MD">
+              <i class="bi bi-database"></i> Obtener Datos
+            </button>
+          </div>
+          <div class="col-md-4">
+            <button class="btn btn-outline-primary w-100 command-btn" data-cmd="MT">
+              <i class="bi bi-gear"></i> Modo Training
+            </button>
+          </div>
+          <div class="col-md-4">
+            <button class="btn btn-outline-primary w-100 command-btn" data-cmd="MP">
+              <i class="bi bi-pause"></i> Pausar Motor
+            </button>
+          </div>
+
+          <!-- Segunda fila de botones -->
+          <div class="col-md-4">
+            <button class="btn btn-outline-primary w-100 command-btn" data-cmd="R">
+              <i class="bi bi-arrow-counterclockwise"></i> Reset Contador
+            </button>
+          </div>
+
+          <div class="col-md-4">
+            <button class="btn btn-outline-primary w-100 command-btn" data-cmd="DM">
+              <i class="bi bi-bug"></i> Debug Msg
+            </button>
+          </div>
+
+          <!-- Tercera fila de botones -->
+          <div class="col-md-4">
+            <button class="btn btn-outline-primary w-100 command-btn" data-cmd="IM">
+              <i class="bi bi-info-circle"></i> Info Msg
+            </button>
+          </div>
+          <div class="col-md-4">
+            <button class="btn btn-outline-primary w-100 command-btn" data-cmd="CC">
+              <i class="bi bi-gear"></i> Calibrar clasificador
+            </button>
+          </div>
+          <div class="col-md-4">
+            <div class="dropdown">
+              <button class="btn btn-outline-primary w-100 dropdown-toggle" type="button" id="colorDropdown"
+                data-bs-toggle="dropdown">
+                <i class="bi bi-archive"></i> Ir a Contenedor
+              </button>
+              <ul class="dropdown-menu w-100">
+                <li>
+                  <a class="dropdown-item color-option" href="#" data-value="0">Rojo</a>
+                </li>
+                <li>
+                  <a class="dropdown-item color-option" href="#" data-value="1">Verde</a>
+                </li>
+                <li>
+                  <a class="dropdown-item color-option" href="#" data-value="2">Amarillo</a>
+                </li>
+                <li>
+                  <a class="dropdown-item color-option" href="#" data-value="3">Azul</a>
+                </li>
+                <li>
+                  <a class="dropdown-item color-option" href="#" data-value="4">Naranja</a>
+                </li>
+                <li>
+                  <a class="dropdown-item color-option" href="#" data-value="5">Desecho</a>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="input-group">
+              <input type="number" id="clasificadorPosition" class="form-control"
+                placeholder="Posición (-10000 a 10000)" />
+              <button class="btn btn-primary" id="moveClasificadorBtn">
+                <i class="bi bi-send"></i> Mover Clasificador
+              </button>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <button class="btn btn-outline-primary w-100 command-btn" data-cmd="CW">
+              <i class="bi bi-gear"></i> Calibrar rueda
+            </button>
+          </div>
+          <div class="col-md-4">
+            <button class="btn btn-outline-primary w-100 command-btn" data-cmd="RC">
+              <i class="bi bi-eyedropper"></i> Leer Color
+            </button>
+          </div>
+          <div class="col-md-4">
+            <div class="input-group">
+              <input type="number" id="ruedaPosition" class="form-control" placeholder="Posición (-10000 a 10000)" />
+              <button class="btn btn-primary" id="moveRuedaBtn">
+                <i class="bi bi-send"></i> Mover Rueda
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Consola de Logs -->
+    <div class="card mb-4">
+      <div class="card-header d-flex justify-content-between">
+        <h3>Consola de Mensajes</h3>
+        <button id="clearLogBtn" class="btn btn-warning btn-sm">
+          Limpiar Consola
+        </button>
+      </div>
+      <div class="card-body">
+        <div id="log"></div>
+      </div>
+    </div>
+
+    <!-- Enviar Mensaje -->
+    <div class="card">
+      <div class="card-header">
+        <h3>Enviar Comando</h3>
+      </div>
+      <div class="card-body">
+        <div class="input-group">
+          <input type="text" id="messageInput" class="form-control" placeholder="Escribe aquí..." />
+          <button id="sendBtn" class="btn btn-success">Enviar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // Variables globales
+    let port = null;
+    let reader = null;
+    const logElement = document.getElementById("log");
+    const connectBtn = document.getElementById("connectBtn");
+    const disconnectBtn = document.getElementById("disconnectBtn");
+    const sendBtn = document.getElementById("sendBtn");
+    const clearLogBtn = document.getElementById("clearLogBtn");
+    const messageInput = document.getElementById("messageInput");
+    const connectionStatus = document.getElementById("connectionStatus");
+
+    // Diccionarios para traducir estados y modos
+    const machineStates = {
+      0: "🟡 Esperando datos del Frontend", //STATE_AWAIT_DATA
+      1: "🔄 Clasificando colores", //STATE_COLOR_SORTING
+      2: "⚠️ Se requieren más M&M's", //STATE_NEED_OBJECTS
+      3: "❌ Rueda atascada", //STATE_WHEEL_STUCK
+      4: "⏸️ Pausado", //STATE_PAUSE
+      5: "⚙️ Calibrando rueda", //STATE_WHEEL_CALIBRATE
+      6: "⚙️ Calibrando clasificador", //STATE_SORTER_CALIBRATE
+      7: "✅ Clasificación completa", //STATE_COLOR_SORTING_COMPLETE
+    };
+
+    const machineModes = {
+      0: "Sistema (Modo Ordenado)", //MACHINE_MODE_SYSTEM_ORDENADO
+      1: "Sistema (Modo Revoltoso)", //MACHINE_MODE_SYSTEM_REVOLTOSO
+      2: "Usuario (Modo Ordenado)", //MACHINE_MODE_USER_ORDENADO
+      3: "Usuario (Modo Revoltoso)", //MACHINE_MODE_USER_REVOLTOSO
+    };
+
+    // Variables globales (agrega estas)
+    let receivedBuffer = "";
+    let lastReceivedTime = 0;
+    const DEBOUNCE_TIME_MS = 10; // Tiempo para considerar que un mensaje está completo
+
+    // Variables para almacenar conteos
+    let systemTarget = { R: 0, G: 0, Y: 0, B: 0, O: 0, D: 0 };
+    let currentCount = { R: 0, G: 0, Y: 0, B: 0, O: 0, D: 0 };
+    let currentMode = "";
+    let isSystemMode = false;
+
+    // Verificar si Web Serial API está disponible
+    if (!("serial" in navigator)) {
+      alert(
+        "Error: Web Serial API no soportada en este navegador.\nUsa Chrome/Edge en Android."
+      );
+      document.getElementById("connectBtn").disabled = true;
+    }
+
+    // Función para actualizar el panel de modo
+    function updateMachineMode(message) {
+      const mode = message.substring(2).trim();
+      currentMode = parseInt(mode);
+      isSystemMode = currentMode === 0 || currentMode === 1; // 0 y 1 son modos SYSTEM
+      document.getElementById("currentMode").textContent =
+        machineModes[mode] || `Modo ${mode}`;
+      updateClassificationView(); // Actualizar vista al cambiar modo
+    }
+
+    // Función para actualizar el panel de estado
+    function updateMachineStatus(message) {
+      const state = message.substring(2).trim();
+      const stateText = machineStates[state] || `Desconocido (${state})`;
+      document.getElementById("currentState").textContent = stateText;
+    }
+
+    function processCountData(data) {
+      try {
+        const type = data.substring(0, 3);
+        const countData = data.substring(3);
+
+        // Procesamos asegurando todos los colores
+        const counts = parseCounts(countData);
+
+        if (type === "S->") {
+          systemTarget = { ...counts };
+          addLog(`Objetivo actualizado: ${JSON.stringify(counts)}`);
+        } else {
+          currentCount = { ...counts };
+          addLog(`Conteo actualizado: ${JSON.stringify(counts)}`);
+        }
+
+        updateClassificationView();
+      } catch (error) {
+        addLog(`Error procesando conteo: ${error.message}`);
+      }
+    }
+
+    function parseCounts(data) {
+      // Inicializamos con ceros para todos los colores posibles
+      const counts = { R: 0, G: 0, Y: 0, B: 0, O: 0, D: 0 };
+      console.log(data);
+      // Dividimos por espacios y procesamos cada par color:valor
+      data.split(" ").forEach((part) => {
+        if (part.includes(":")) {
+          const [color, value] = part.split(":");
+          if (color in counts) {
+            counts[color] = parseInt(value) || 0;
+          }
+        }
+      });
+
+      return counts;
+    }
+
+    function updateClassificationView() {
+      const colors = ["R", "G", "Y", "B", "O", "D"]; // Todos los colores definidos
+
+      if (isSystemMode) {
+        // Modo Sistema
+        document.getElementById("systemModeView").style.display = "block";
+        document.getElementById("userModeView").style.display = "none";
+
+        let systemHTML = '<div class="row">';
+        colors.forEach((color) => {
+          // Aseguramos valores numéricos (|| 0 maneja undefined/NaN)
+          const total = Number(systemTarget[color]) || 0;
+          const current = Number(currentCount[color]) || 0;
+          const remaining = Math.max(0, total - current);
+
+          systemHTML += `
+        <div class="col-md-2 mb-2">
+          <div class="d-flex align-items-center">
+            <div class="color-box color-${color} me-2"></div>
+            <div>`;
+          if (color == "D") {
+            systemHTML += `<div><strong>${color}:</strong> ${current}</div>
+              <small class="text-muted">(Desechados)</small> `;
+          } else {
+            systemHTML += `<div><strong>${color}:</strong> ${current}/${total}</div>
+              <small class="text-muted">Faltan: ${remaining}</small>`;
+          }
+          systemHTML += `
+            </div>
+          </div>
+        </div>`;
+        });
+        systemHTML += "</div>"; // Cierre del row
+        document.getElementById("systemTarget").innerHTML = systemHTML;
+      } else {
+        // Modo Usuario
+        document.getElementById("systemModeView").style.display = "none";
+        document.getElementById("userModeView").style.display = "block";
+
+        let userHTML = '<div class="row">';
+        colors.forEach((color) => {
+          const count = Number(currentCount[color]) || 0;
+          userHTML += `
+           <div class="row col-md-2 mb-2">
+          <div class="d-flex align-items-center">
+            <div class="color-box color-${color} me-2"></div>
+            <div>
+             <span>${color}: <strong>${count}</strong> unidades</span>
+            </div>
+          </div>
+        </div>
+      `;
+        });
+        userHTML += "</div>"; // Cierre del row
+        document.getElementById("userCount").innerHTML = userHTML;
+      }
+    }
+
+    function processMessage(message) {
+      // Limpiar y dividir múltiples mensajes en caso de buffer acumulado
+      const cleanMessage = message.replace(/\r\n/g, "\n").trim();
+      const messages = cleanMessage.split("\n");
+
+      messages.forEach((msg) => {
+        if (msg.startsWith("S:")) {
+          updateMachineStatus(msg);
+          addLog(`Estado: ${machineStates[msg.substring(2).trim()] || msg}`);
+        } else if (msg.startsWith("M:")) {
+          updateMachineMode(msg);
+          addLog(`Modo: ${machineModes[msg.substring(2).trim()] || msg}`);
+        } else if (msg.startsWith("C:")) {
+          processCountData(msg.substring(2).trim());
+        } else if (msg.length > 0) {
+          addLog(msg);
+        }
+      });
+    }
+
+    // Modifica la función addLog para incluir updateMachineStatus
+    function addLog(message) {
+      const logEntry = document.createElement("div");
+      logEntry.className = "log-entry";
+      logEntry.textContent = `> ${new Date().toLocaleTimeString()} ${message}`;
+      logElement.prepend(logEntry);
+    }
+
+    async function readData() {
+      try {
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+
+          const text = new TextDecoder().decode(value);
+          receivedBuffer += text;
+
+          // Procesar solo si tenemos un mensaje completo (termina en \n)
+          if (receivedBuffer.includes("\n")) {
+            const messages = receivedBuffer.split("\n");
+            receivedBuffer = messages.pop(); // Guardar mensaje incompleto para el próximo ciclo
+
+            messages.forEach((msg) => {
+              if (msg.trim().length > 0) {
+                processMessage(msg.trim());
+              }
+            });
+          }
+        }
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          addLog(`Error de lectura: ${error.message}`);
+        }
+      } finally {
+        reader.releaseLock();
+      }
+    }
+
+    // Conectar al ESP32
+    connectBtn.addEventListener("click", async () => {
+      try {
+        addLog("Solicitando puerto serial (baudRate: 115200)...");
+        port = await navigator.serial.requestPort();
+        await port.open({ baudRate: 115200 });
+        addLog("Conectado al AT_MM_Machine (Serial Bluetooth)");
+        connectionStatus.textContent = "Conectado";
+        connectionStatus.className = "mt-2 text-success";
+        // Leer datos del puerto serial
+        reader = port.readable.getReader();
+        readData();
+      } catch (error) {
+        addLog(`Error de conexión: ${error.message}`);
+      }
+    });
+
+    // Desconectar
+    disconnectBtn.addEventListener("click", async () => {
+      if (reader) {
+        await reader.cancel();
+        reader = null;
+      }
+      if (port) {
+        await port.close();
+        port = null;
+      }
+      addLog("Desconectado del ESP32");
+      connectionStatus.textContent = "No conectado";
+      connectionStatus.className = "mt-2 text-danger";
+    });
+
+    // Enviar mensaje
+    sendBtn.addEventListener("click", async () => {
+      if (!port || !port.writable) {
+        addLog("Error: No hay conexión activa");
+        return;
+      }
+      const message = messageInput.value;
+      if (!message) {
+        addLog("Error: Mensaje vacío");
+        return;
+      }
+      try {
+        const writer = port.writable.getWriter();
+        await writer.write(new TextEncoder().encode(message + "\n"));
+        writer.releaseLock();
+        addLog(`Enviado: ${message}`);
+        messageInput.value = "";
+      } catch (error) {
+        addLog(`Error al enviar: ${error.message}`);
+      }
+    });
+
+    // Limpiar consola
+    clearLogBtn.addEventListener("click", () => {
+      logElement.innerHTML = "";
+    });
+
+    // Enviar al presionar Enter
+    messageInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") sendBtn.click();
+    });
+
+    // Función para enviar comandos Bluetooth
+    async function sendCommand(command) {
+      if (!port || !port.writable) {
+        addLog("Error: No hay conexión Bluetooth activa");
+        return;
+      }
+      try {
+        const writer = port.writable.getWriter();
+        await writer.write(new TextEncoder().encode(command + "\n"));
+        writer.releaseLock();
+        addLog(`Comando enviado: ${command}`);
+      } catch (error) {
+        addLog(`Error enviando comando: ${error.message}`);
+      }
+    }
+
+    // Manejador de botones de comandos
+    document.querySelectorAll(".command-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const command = btn.getAttribute("data-cmd");
+        sendCommand(command);
+      });
+    });
+
+    // Manejador del dropdown de colores
+    document.querySelectorAll(".color-option").forEach((item) => {
+      item.addEventListener("click", (e) => {
+        e.preventDefault();
+        const colorValue = item.getAttribute("data-value");
+        sendCommand(`SC${colorValue}`);
+        document.getElementById(
+          "colorDropdown"
+        ).textContent = `Contenedor: ${item.textContent}`;
+      });
+    });
+
+    // Manejador para mover servo
+    document
+      .getElementById("moveClasificadorBtn")
+      .addEventListener("click", () => {
+        const position = document.getElementById(
+          "clasificadorPosition"
+        ).value;
+        if (position >= -10000 && position <= 10000) {
+          sendCommand(`SS${position}`);
+        } else {
+          addLog("Error: Posición debe ser 10000-10000");
+        }
+      });
+
+    // Manejador para mover servo
+    document.getElementById("moveRuedaBtn").addEventListener("click", () => {
+      const position = document.getElementById("ruedaPosition").value;
+      if (position >= -10000 && position <= 10000) {
+        sendCommand(`WS${position}`);
+      } else {
+        addLog("Error: Posición debe ser 10000-10000");
+      }
+    });
+  </script>
+</body>
+</html>
