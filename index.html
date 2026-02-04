@@ -2,670 +2,1365 @@
 <html lang="es">
 
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Control Clasificador M&M's</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css" />
-  <style>
-    #log {
-      height: 300px;
-      overflow-y: auto;
-      background-color: #212529;
-      color: #f8f9fa;
-      font-family: monospace;
-      padding: 10px;
-      border-radius: 5px;
-      white-space: pre-wrap;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Máquina de Estados</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .device-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
 
-    .log-entry {
-      margin-bottom: 5px;
-    }
+        .log-container {
+            height: 300px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
 
-    .color-R {
-      background-color: #dc3545;
-    }
+        .color-box {
+            width: 30px;
+            height: 30px;
+            display: inline-block;
+            margin-right: 5px;
+            border: 1px solid #ddd;
+        }
 
-    /* Rojo */
-    .color-G {
-      background-color: #28a745;
-    }
+        .connection-status {
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: inline-block;
+        }
 
-    /* Verde */
-    .color-Y {
-      background-color: #ffc107;
-    }
+        .connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
 
-    /* Amarillo */
-    .color-B {
-      background-color: #007bff;
-    }
+        .disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
 
-    /* Azul */
-    .color-O {
-      background-color: #fd7e14;
-    }
+        .sensor-status {
+            font-weight: bold;
+        }
 
-    .color-D {
-      background-color: #6c757d;
-    }
+        .active-sensor {
+            color: #28a745;
+        }
 
-    /* Naranja */
-    .color-box {
-      width: 25px;
-      height: 25px;
-      border: 1px solid #dee2e6;
-      border-radius: 50%;
-    }
+        .inactive-sensor {
+            color: #dc3545;
+        }
 
-    .text-muted {
-      font-size: 0.8rem;
-      opacity: 0.8;
-    }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-    /* Estilos para versión compacta */
-    .card-header h3 {
-      font-size: 1.1rem;
-      font-weight: 500;
-    }
+        .simulation-toggle {
+            display: flex;
+            align-items: center;
+        }
 
-    #currentMode,
-    #currentState,
-    #connectionStatus {
-      font-size: 0.92rem;
-      font-weight: 500;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    } 
-    /* Estilos para los botones de comandos */
-    .command-btn {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+        .simulation-toggle label {
+            margin-right: 10px;
+            margin-bottom: 0;
+        }
 
-    /* Estilos para el dropdown de colores */
-    .dropdown-item.color-option {
-      padding: 0.5rem 1rem;
-    }
+        #rfidReadResult {
+            word-break: break-all;
+            font-family: monospace;
+        }
 
-    /* Indicadores visuales para colores */
-    .dropdown-item[data-value="0"] {
-      color: #dc3545;
-    }
+        .count-display {
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-align: center;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            margin-bottom: 10px;
+        }
 
-    /* Rojo */
-    .dropdown-item[data-value="1"] {
-      color: #28a745;
-    }
+        .count-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
 
-    /* Verde */
-    .dropdown-item[data-value="2"] {
-      color: #ffc107;
-    }
+        .color-count-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
 
-    /* Amarillo */
-    .dropdown-item[data-value="3"] {
-      color: #007bff;
-    }
+        .color-count-item {
+            display: flex;
+            align-items: center;
+            width: 18%;
+        }
 
-    /* Azul */
-    .dropdown-item[data-value="4"] {
-      color: #fd7e14;
-    }
+        .count-value {
+            display: flex;
+            justify-content: center;
+            font-weight: bold;
+            margin-left: 5px;
+        }
 
-    /* Naranja */
-    .dropdown-item[data-value="5"] {
-      color: #6c757d;
-    }
+        .count-section {
+            margin-bottom: 15px;
+        }
 
-    /* Desecho */
-  </style>
+        .count-section-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #495057;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 5px;
+        }
+    </style>
 </head>
 
 <body>
-  <div class="container py-4">
-    <h1 class="text-center mb-4">Clasificador de M&M's</h1>
+    <div class="container my-4">
+        <h1 class="text-center mb-4">Control de Máquina de Estados</h1>
 
-    <!-- Sección Compacta Combinada - Versión Mejorada -->
-    <div class="card mb-4">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <h3 class="mb-0">Estado del Sistema</h3>
-        <div>
-          <button id="connectBtn" class="btn btn-primary mb-2">
-            <i class="bi bi-bluetooth"></i> Conectar
-          </button>
-          <button id="disconnectBtn" class="btn btn-sm btn-outline-danger">
-            <i class="bi bi-bluetooth-off">Desconectar</i>
-          </button>
-        </div>
-      </div>
-      <div class="card-body py-2">
         <div class="row">
-          <div class="col-md-4 border-end">
-            <div class="d-flex align-items-center">
-              <span class="badge bg-info me-2">Modo:</span>
-              <span id="currentMode" class="small">No especificado</span>
+            <div class="col-md-4">
+                <!-- Sección de Conexión Bluetooth -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Conexión Bluetooth Serial</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <button id="connectBtn" class="btn btn-success">Conectar Bluetooth</button>
+                            <div>
+                                Estado:
+                                <span id="connectionStatus" class="connection-status disconnected">Desconectado</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
-          <div class="col-md-4 border-end">
-            <div class="d-flex align-items-center">
-              <span class="badge bg-warning me-2">Estado:</span>
-              <span id="currentState" class="small">Desconocido</span>
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Máquina de estados</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                Estado:
+                                <span id="machineState" class="connection-status disconnected">N/A</span>
+                            </div>
+                            <div>
+                                Modo:
+                                <span id="operationMode" class="connection-status disconnected">N/A</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
-          <div class="col-md-4">
-            <div class="d-flex align-items-center">
-              <span class="badge bg-success me-2">Conexión:</span>
-              <span id="connectionStatus" class="small text-danger">No conectado</span>
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Clasificación</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                Modo:
+                                <span id="machineClassificationType" class="connection-status disconnected">N/A</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
+
+        <!-- Sección de Conteos -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Conteos por Color</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Conteo de Usuario -->
+                    <div class="col-md-4">
+                        <div class="count-section">
+                            <div class="count-section-title">Conteo de Usuario</div>
+                            <div id="userCounts">
+                                <div class="color-count-row">
+                                    <div class="color-count-item">
+                                        <div class="color-box" style="background-color: #FFEB3B;">
+                                            <span class="count-value" id="userCountA">0</span>
+                                        </div>
+                                    </div>
+                                    <div class="color-count-item">
+                                        <div class="color-box" style="background-color: #2196F3;">
+                                            <span class="count-value" id="userCountB">0</span>
+                                        </div>
+                                    </div>
+                                    <div class="color-count-item">
+                                        <div class="color-box" style="background-color: #F44336;">
+                                            <span class="count-value" id="userCountC">0</span>
+                                        </div>
+                                    </div>
+                                    <div class="color-count-item">
+                                        <div class="color-box" style="background-color: #FF9800;">
+                                            <span class="count-value" id="userCountD">0</span>
+                                        </div>
+                                    </div>
+                                    <div class="color-count-item">
+                                        <div class="color-box" style="background-color: #4CAF50;">
+                                            <span class="count-value" id="userCountE">0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Conteo del Sistema -->
+                    <div class="col-md-4">
+                        <div class="count-section">
+                            <div class="count-section-title">Conteo del Sistema</div>
+                            <div id="systemCounts">
+                                <div class="color-count-row">
+                                    <div class="color-count-item">
+                                        <div class="color-box" style="background-color: #FFEB3B;">
+                                            <span class="count-value" id="systemCountA">0</span>
+                                        </div>
+                                    </div>
+                                    <div class="color-count-item">
+                                        <div class="color-box" style="background-color: #2196F3;">
+                                            <span class="count-value" id="systemCountB">0</span>
+                                        </div>
+                                    </div>
+                                    <div class="color-count-item">
+                                        <div class="color-box" style="background-color: #F44336;">
+                                            <span class="count-value" id="systemCountC">0</span>
+                                        </div>
+                                    </div>
+                                    <div class="color-count-item">
+                                        <div class="color-box" style="background-color: #FF9800;">
+                                            <span class="count-value" id="systemCountD">0</span>
+                                        </div>
+                                    </div>
+                                    <div class="color-count-item">
+                                        <div class="color-box" style="background-color: #4CAF50;">
+                                            <span class="count-value" id="systemCountE">0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Target Count -->
+                    <div class="col-md-4">
+                        <div class="count-section">
+                            <div class="count-section-title">Target Count</div>
+                            <div id="targetCounts">
+                                <div class="color-count-row">
+                                    <div class="color-count-item">
+                                        <div class="color-box" style="background-color: #FFEB3B;">
+                                            <span class="count-value" id="targetCountA">0</span>
+                                        </div>
+                                    </div>
+                                    <div class="color-count-item">
+                                        <div class="color-box" style="background-color: #2196F3;">
+                                            <span class="count-value" id="targetCountB">0</span>
+                                        </div>
+                                    </div>
+                                    <div class="color-count-item">
+                                        <div class="color-box" style="background-color: #F44336;">
+                                            <span class="count-value" id="targetCountC">0</span>
+                                        </div>
+                                    </div>
+                                    <div class="color-count-item">
+                                        <div class="color-box" style="background-color: #FF9800;">
+                                            <span class="count-value" id="targetCountD">0</span>
+                                        </div>
+                                    </div>
+                                    <div class="color-count-item">
+                                        <div class="color-box" style="background-color: #4CAF50;">
+                                            <span class="count-value" id="targetCountE">0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección para establecer Target Count -->
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <div class="count-section-title">Establecer Target Count</div>
+                        <div style="display: flex; justify-content: space-between; align-content: center;">
+                            <div class="input-group mb-2 pe-2">
+                                <span class="input-group-text" style="background-color: #FFEB3B;">Amarillo</span>
+                                <input type="number" id="targetA" class="form-control" placeholder="Target A" min="0"
+                                    value="0">
+                            </div>
+                            <div class="input-group mb-2 pe-2">
+                                <span class="input-group-text" style="background-color: #2196F3;">Azul</span>
+                                <input type="number" id="targetB" class="form-control" placeholder="Target B" min="0"
+                                    value="0">
+                            </div>
+                            <div class="input-group mb-2 pe-2">
+                                <span class="input-group-text" style="background-color: #F44336;">Rojo</span>
+                                <input type="number" id="targetC" class="form-control" placeholder="Target C" min="0"
+                                    value="0">
+                            </div>
+                            <div class="input-group mb-2 pe-2">
+                                <span class="input-group-text" style="background-color: #FF9800;">Naranja</span>
+                                <input type="number" id="targetD" class="form-control" placeholder="Target D" min="0"
+                                    value="0">
+                            </div>
+                            <div class="input-group mb-2 pe-2">
+                                <span class="input-group-text" style="background-color: #4CAF50;">Verde</span>
+                                <input type="number" id="targetE" class="form-control" placeholder="Target E" min="0"
+                                    value="0">
+                            </div>
+                            <button class="btn btn-primary m-2" onclick="setTargetCount(14)">Establecer</button>
+                            <button class="btn btn-primary m-2" onclick="setTargetCount(13)">Enviar</button>
+                            <button class="btn btn-primary m-2" onclick="getTargetCount(14)">Consultar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <div class="count-section-title">Últimos 5 Colores Recibidos (9)</div>
+                        <div id="colorHistory" class="d-flex justify-content-around">
+                            <div class="text-center">
+                                <div class="color-box" style="background-color: #f8f9fa;"></div>
+                                <div>-</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="color-box" style="background-color: #f8f9fa;"></div>
+                                <div>-</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="color-box" style="background-color: #f8f9fa;"></div>
+                                <div>-</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="color-box" style="background-color: #f8f9fa;"></div>
+                                <div>-</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="color-box" style="background-color: #f8f9fa;"></div>
+                                <div>-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Resto del código existente... -->
+        <!-- Motor de Transporte -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Motor de Transporte (ID: 4)</h5>
+                <div class="simulation-toggle">
+                    <label class="form-check-label">Simulación:</label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="simulationTransport"
+                            onchange="toggleSimulation(4, this.checked)">
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8" style="display: flex; justify-content: space-between;">
+                        <div class="input-group mb-3 pe-2">
+                            <input type="number" id="transportSteps" class="form-control" placeholder="Número de pasos">
+                            <button class="btn btn-primary" onclick="moveTransport()">Mover Pasos</button>
+                        </div>
+                        <div class="input-group mb-3 pe-2">
+                            <input type="number" id="transportSpeed" class="form-control"
+                                placeholder="Velocidad (100-10000)">
+                            <button class="btn btn-primary" onclick="transportMaxSpeed()">Velo. máxima</button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex flex-row flex-wrap justify-content-between">
+                            <button class="btn btn-warning" onclick="calibrateTransport()">Calibrar</button>
+                            <button class="btn btn-success" onclick="moverTransport()">Mover</button>
+                            <button class="btn btn-danger" onclick="detenerTransport()">Detener</button>
+                            <button class="btn btn-primary" onclick="continuarTransport()">Continuar</button>
+                        </div>
+                        <div class="d-flex flex-row flex-wrap justify-content-around">
+                            <div class="simulation-toggle">
+                                <label class="form-check-label">Auto Trigger:</label>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="transportAutoTrigger" checked
+                                        onchange="autoTrigger(this.checked)">
+                                </div>
+                            </div>
+                            <div class="simulation-toggle">
+                                <label class="form-check-label">Auto Pause:</label>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="transportAutoPause" checked
+                                        onchange="autoPause(this.checked)">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Motor de Contenedores -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Motor de Contenedores (ID: 5)</h5>
+                <div class="simulation-toggle">
+                    <label class="form-check-label">Simulación:</label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="simulationContainer"
+                            onchange="toggleSimulation(5, this.checked)">
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8" style="display: flex; justify-content: space-between;">
+                        <div class="input-group mb-3 pe-2">
+                            <select id="containerSelect" class="form-select">
+                                <option value="0">Contenedor 1</option>
+                                <option value="1">Contenedor 2</option>
+                                <option value="2">Contenedor 3</option>
+                                <option value="3">Contenedor 4</option>
+                                <option value="4">Contenedor 5</option>
+                                <option value="5">Contenedor 6</option>
+                            </select>
+                            <button class="btn btn-primary" onclick="moveContainer()">Mover a Contenedor</button>
+                        </div>
+                        <div class="input-group mb-3 pe-2">
+                            <input type="number" id="containersSpeed" class="form-control"
+                                placeholder="Velocidad (100-10000)">
+                            <button class="btn btn-primary" onclick="containersMaxSpeed()">Velo. máxima</button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-warning" onclick="calibrateContainer()">Calibrar</button>
+                        <button class="btn btn-primary" onclick="disableContainer()">Desabilitar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sensor de Color -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Sensor de Color (ID: 3)</h5>
+                <div class="simulation-toggle">
+                    <label class="form-check-label">Simulación:</label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="simulationColor"
+                            onchange="toggleSimulation(3, this.checked)">
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-2" style="display: flex; justify-content: space-around;">
+                        <button class="btn btn-primary mb-3" onclick="readColor()">Leer Color</button>
+                        <div id="colorReadResult" class="mt-2">Color: -</div>
+                    </div>
+                    <div class="col-md-4"></div>
+                    <div class="col-md-6" style="display: flex; justify-content: space-around;">
+                        <select id="colorSelect" class="form-select pe-2 me-2">
+                            <option value="A">Amarillo</option>
+                            <option value="B">Azul</option>
+                            <option value="C">Rojo</option>
+                            <option value="D">Naranja</option>
+                            <option value="E">Verde</option>
+                            <option value="F">Café</option>
+                        </select>
+                        <button class="btn btn-success" onclick="setColor()">Establecer Color</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Buzzer -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Buzzer (ID: 7)</h5>
+                <div class="simulation-toggle">
+                    <label class="form-check-label">Simulación:</label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="simulationBuzzer"
+                            onchange="toggleSimulation(7, this.checked)">
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="input-group">
+                    <input type="number" id="beepCount" class="form-control" placeholder="Número de beeps" min="1">
+                    <button class="btn btn-primary" onclick="activateBuzzer()">Activar Buzzer</button>
+                </div>
+            </div>
+        </div>
+        <!-- LEDs RGB -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">LEDs RGB (ID: 6)</h5>
+                <div class="simulation-toggle">
+                    <label class="form-check-label">Simulación:</label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="simulationLED"
+                            onchange="toggleSimulation(6, this.checked)">
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <label for="redValue" class="form-label">Rojo (0-255)</label>
+                        <input type="range" class="form-range" min="0" max="255" id="redValue"
+                            oninput="updateColorPreview()">
+                        <input type="number" class="form-control" id="redValueText" min="0" max="255" value="0"
+                            oninput="updateColorSlider(this, 'redValue')">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="greenValue" class="form-label">Verde (0-255)</label>
+                        <input type="range" class="form-range" min="0" max="255" id="greenValue"
+                            oninput="updateColorPreview()">
+                        <input type="number" class="form-control" id="greenValueText" min="0" max="255" value="0"
+                            oninput="updateColorSlider(this, 'greenValue')">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="blueValue" class="form-label">Azul (0-255)</label>
+                        <input type="range" class="form-range" min="0" max="255" id="blueValue"
+                            oninput="updateColorPreview()">
+                        <input type="number" class="form-control" id="blueValueText" min="0" max="255" value="0"
+                            oninput="updateColorSlider(this, 'blueValue')">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="brightness" class="form-label">Brillo (0-100)</label>
+                        <input type="range" class="form-range" min="0" max="100" id="brightness"
+                            oninput="document.getElementById('brightnessText').value = this.value">
+                        <input type="number" class="form-control" id="brightnessText" min="0" max="100" value="100"
+                            oninput="document.getElementById('brightness').value = this.value">
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-12 d-flex justify-content-center align-items-center">
+                        <div id="colorPreview" class="color-box me-3"></div>
+                        <button class="btn btn-success me-2" onclick="setLEDColor()">Establecer Color</button>
+                        <button class="btn btn-primary me-2" onclick="turnOnLED()">Encender</button>
+                        <button class="btn btn-danger me-2" onclick="turnOffLED()">Apagar</button>
+                        <button class="btn btn-success me-2" onclick="setLEDBrillo()">Brillo</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Lector RFID -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Lector RFID (ID: 2)</h5>
+                <div class="simulation-toggle">
+                    <label class="form-check-label">Simulación:</label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="simulationRFID"
+                            onchange="toggleSimulation(2, this.checked)">
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6" style="display: flex;">
+                        <button class="btn btn-primary mb-3" onclick="readRFID()">Leer Tag</button>
+                        <div id="rfidReadResult" class="mt-2 mx-5">Tag: -</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <input type="text" id="rfidTag" class="form-control" placeholder="Tag RFID">
+                            <button class="btn btn-success" onclick="sendRFID()">Enviar Tag</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Sensores de Línea -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Sensores de Línea</h5>
+            </div>
+            <div class="card-body">
+                <!-- SOMU -->
+                <div class="row mb-3 align-items-center">
+                    <div class="col-md-3">
+                        <h6>SOMU (ID: 8)</h6>
+                    </div>
+                    <div class="col-md-3">
+                        <div id="somuStatus" class="sensor-status">-</div>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-sm btn-outline-primary" onclick="readLineSensor(8)">Leer</button>
+                    </div>
+                </div>
+
+                <!-- SOMS -->
+                <div class="row mb-3 align-items-center">
+                    <div class="col-md-3">
+                        <h6>SOMS (ID: 9)</h6>
+                    </div>
+                    <div class="col-md-3">
+                        <div id="somsStatus" class="sensor-status">-</div>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-sm btn-outline-primary" onclick="readLineSensor(9)">Leer</button>
+                    </div>                    
+                </div>
+
+                <!-- SAMTP -->
+                <div class="row mb-3 align-items-center">
+                    <div class="col-md-3">
+                        <h6>SAMTP (ID: 10)</h6>
+                    </div>
+                    <div class="col-md-3">
+                        <div id="samtpStatus" class="sensor-status">-</div>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-sm btn-outline-primary" onclick="readLineSensor(10)">Leer</button>
+                    </div>
+                    <div class="col-md-3 simulation-toggle">
+                        <label class="form-check-label">Debug:</label>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="simulationSAMTP"
+                                onchange="toggleDebug(18, this.checked)">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SAMCP -->
+                <div class="row mb-3 align-items-center">
+                    <div class="col-md-3">
+                        <h6>SAMCP (ID: 11)</h6>
+                    </div>
+                    <div class="col-md-3">
+                        <div id="samcpStatus" class="sensor-status">-</div>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-sm btn-outline-primary" onclick="readLineSensor(11)">Leer</button>
+                    </div>
+                    <div class="col-md-3 simulation-toggle">
+                        <label class="form-check-label">Test sensors:</label>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="simulationSAMCP"
+                                onchange="toggleSimulation(11, this.checked)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Mensajes y Logs -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Mensajes (Property type 3)</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="messagesContainer" class="log-container"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Log de Comunicación</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="logContainer" class="log-container"></div>
+                        <button class="btn btn-secondary mt-2" onclick="clearLog()">Limpiar Log</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
-    <!-- Panel de Clasificación -->
-    <div class="card mb-4">
-      <div class="card-header">
-        <h3>Clasificación de M&M's</h3>
-      </div>
-      <div class="card-body" id="classificationContainer">
-        <div id="systemModeView" style="display: none">
-          <h5>Objetivo del Sistema</h5>
-          <div id="systemTarget"></div>
-        </div>
-        <div id="userModeView" style="display: none">
-          <h5>Conteo Actual</h5>
-          <div id="userCount"></div>
-        </div>
-      </div>
-    </div>
+    <script>
+        // Variables globales
+        let port = null;
+        let reader = null;
+        let receivedColors = [];
+        let buffer = ''; // Buffer para datos recibidos parcialmente
+        const colorMap = {
+            'A': { name: 'Amarillo', color: '#FFEB3B' },
+            'B': { name: 'Azul', color: '#2196F3' },
+            'C': { name: 'Rojo', color: '#F44336' },
+            'D': { name: 'Naranja', color: '#FF9800' },
+            'E': { name: 'Verde', color: '#4CAF50' },
+            'F': { name: 'Café', color: '#795548' },
+            'X': { name: 'Desconocido', color: '#9E9E9E' }
+        };
 
-    <!-- Panel de Comandos -->
-    <div class="card mb-4">
-      <div class="card-header">
-        <h5>Comandos</h5>
-      </div>
-      <div class="card-body">
-        <div class="row g-2">
-          <!-- Primera fila de botones -->
-          <div class="col-md-4">
-            <button class="btn btn-outline-primary w-100 command-btn" data-cmd="MD">
-              <i class="bi bi-database"></i> Obtener Datos
-            </button>
-          </div>
-          <div class="col-md-4">
-            <button class="btn btn-outline-primary w-100 command-btn" data-cmd="MT">
-              <i class="bi bi-gear"></i> Modo Training
-            </button>
-          </div>
-          <div class="col-md-4">
-            <button class="btn btn-outline-primary w-100 command-btn" data-cmd="MP">
-              <i class="bi bi-pause"></i> Pausar Motor
-            </button>
-          </div>
+        // Conteos por color
+        const userCounts = { A: 0, B: 0, C: 0, D: 0, E: 0 };
+        const systemCounts = { A: 0, B: 0, C: 0, D: 0, E: 0 };
+        const targetCounts = { A: 0, B: 0, C: 0, D: 0, E: 0 };
 
-          <!-- Segunda fila de botones -->
-          <div class="col-md-4">
-            <button class="btn btn-outline-primary w-100 command-btn" data-cmd="R">
-              <i class="bi bi-arrow-counterclockwise"></i> Reset Contador
-            </button>
-          </div>
+        // Property types
+        const PROPERTY_TYPE = {
+            ESTADO: 1,
+            VALOR: 2,
+            MENSAJE: 3,
+            SIMULACION: 4,
+            POSICION: 5,
+            CLASIFICACION: 6,
+            OPERACION: 7,
+            BEEP: 8,
+            COLOR: 9,
+            BRILLO: 10,
+            VELOCIDAD: 11,
+            TIEMPO: 12,
+            ON: 13,
+            OF: 14,
+            LEER: 15,
+            CALIBRAR: 16,
+            CLASIFICACIONES: 17,
+            TEST: 18
+        };
 
-          <div class="col-md-4">
-            <button class="btn btn-outline-primary w-100 command-btn" data-cmd="DM">
-              <i class="bi bi-bug"></i> Debug Msg
-            </button>
-          </div>
-
-          <!-- Tercera fila de botones -->
-          <div class="col-md-4">
-            <button class="btn btn-outline-primary w-100 command-btn" data-cmd="IM">
-              <i class="bi bi-info-circle"></i> Info Msg
-            </button>
-          </div>
-          <div class="col-md-4">
-            <button class="btn btn-outline-primary w-100 command-btn" data-cmd="CC">
-              <i class="bi bi-gear"></i> Calibrar clasificador
-            </button>
-          </div>
-          <div class="col-md-4">
-            <div class="dropdown">
-              <button class="btn btn-outline-primary w-100 dropdown-toggle" type="button" id="colorDropdown"
-                data-bs-toggle="dropdown">
-                <i class="bi bi-archive"></i> Ir a Contenedor
-              </button>
-              <ul class="dropdown-menu w-100">
-                <li>
-                  <a class="dropdown-item color-option" href="#" data-value="0">Rojo</a>
-                </li>
-                <li>
-                  <a class="dropdown-item color-option" href="#" data-value="1">Verde</a>
-                </li>
-                <li>
-                  <a class="dropdown-item color-option" href="#" data-value="2">Amarillo</a>
-                </li>
-                <li>
-                  <a class="dropdown-item color-option" href="#" data-value="3">Azul</a>
-                </li>
-                <li>
-                  <a class="dropdown-item color-option" href="#" data-value="4">Naranja</a>
-                </li>
-                <li>
-                  <a class="dropdown-item color-option" href="#" data-value="5">Desecho</a>
-                </li>
-              </ul>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="input-group">
-              <input type="number" id="clasificadorPosition" class="form-control"
-                placeholder="Posición (-10000 a 10000)" />
-              <button class="btn btn-primary" id="moveClasificadorBtn">
-                <i class="bi bi-send"></i> Mover Clasificador
-              </button>
-            </div>
-          </div>
-
-          <div class="col-md-4">
-            <button class="btn btn-outline-primary w-100 command-btn" data-cmd="CW">
-              <i class="bi bi-gear"></i> Calibrar rueda
-            </button>
-          </div>
-          <div class="col-md-4">
-            <button class="btn btn-outline-primary w-100 command-btn" data-cmd="RC">
-              <i class="bi bi-eyedropper"></i> Leer Color
-            </button>
-          </div>
-          <div class="col-md-4">
-            <div class="input-group">
-              <input type="number" id="ruedaPosition" class="form-control" placeholder="Posición (-10000 a 10000)" />
-              <button class="btn btn-primary" id="moveRuedaBtn">
-                <i class="bi bi-send"></i> Mover Rueda
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Consola de Logs -->
-    <div class="card mb-4">
-      <div class="card-header d-flex justify-content-between">
-        <h3>Consola de Mensajes</h3>
-        <button id="clearLogBtn" class="btn btn-warning btn-sm">
-          Limpiar Consola
-        </button>
-      </div>
-      <div class="card-body">
-        <div id="log"></div>
-      </div>
-    </div>
-
-    <!-- Enviar Mensaje -->
-    <div class="card">
-      <div class="card-header">
-        <h3>Enviar Comando</h3>
-      </div>
-      <div class="card-body">
-        <div class="input-group">
-          <input type="text" id="messageInput" class="form-control" placeholder="Escribe aquí..." />
-          <button id="sendBtn" class="btn btn-success">Enviar</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-  <script>
-    // Variables globales
-    let port = null;
-    let reader = null;
-    const logElement = document.getElementById("log");
-    const connectBtn = document.getElementById("connectBtn");
-    const disconnectBtn = document.getElementById("disconnectBtn");
-    const sendBtn = document.getElementById("sendBtn");
-    const clearLogBtn = document.getElementById("clearLogBtn");
-    const messageInput = document.getElementById("messageInput");
-    const connectionStatus = document.getElementById("connectionStatus");
-
-    // Diccionarios para traducir estados y modos
-    const machineStates = {
-      0: "🟡 Esperando datos del Frontend", //STATE_AWAIT_DATA
-      1: "🔄 Clasificando colores", //STATE_COLOR_SORTING
-      2: "⚠️ Se requieren más M&M's", //STATE_NEED_OBJECTS
-      3: "❌ Rueda atascada", //STATE_WHEEL_STUCK
-      4: "⏸️ Pausado", //STATE_PAUSE
-      5: "⚙️ Calibrando rueda", //STATE_WHEEL_CALIBRATE
-      6: "⚙️ Calibrando clasificador", //STATE_SORTER_CALIBRATE
-      7: "✅ Clasificación completa", //STATE_COLOR_SORTING_COMPLETE
-    };
-
-    const machineModes = {
-      0: "Sistema (Modo Ordenado)", //MACHINE_MODE_SYSTEM_ORDENADO
-      1: "Sistema (Modo Revoltoso)", //MACHINE_MODE_SYSTEM_REVOLTOSO
-      2: "Usuario (Modo Ordenado)", //MACHINE_MODE_USER_ORDENADO
-      3: "Usuario (Modo Revoltoso)", //MACHINE_MODE_USER_REVOLTOSO
-    };
-
-    // Variables globales (agrega estas)
-    let receivedBuffer = "";
-    let lastReceivedTime = 0;
-    const DEBOUNCE_TIME_MS = 10; // Tiempo para considerar que un mensaje está completo
-
-    // Variables para almacenar conteos
-    let systemTarget = { R: 0, G: 0, Y: 0, B: 0, O: 0, D: 0 };
-    let currentCount = { R: 0, G: 0, Y: 0, B: 0, O: 0, D: 0 };
-    let currentMode = "";
-    let isSystemMode = false;
-
-    // Verificar si Web Serial API está disponible
-    if (!("serial" in navigator)) {
-      alert(
-        "Error: Web Serial API no soportada en este navegador.\nUsa Chrome/Edge en Android."
-      );
-      document.getElementById("connectBtn").disabled = true;
-    }
-
-    // Función para actualizar el panel de modo
-    function updateMachineMode(message) {
-      const mode = message.substring(2).trim();
-      currentMode = parseInt(mode);
-      isSystemMode = currentMode === 0 || currentMode === 1; // 0 y 1 son modos SYSTEM
-      document.getElementById("currentMode").textContent =
-        machineModes[mode] || `Modo ${mode}`;
-      updateClassificationView(); // Actualizar vista al cambiar modo
-    }
-
-    // Función para actualizar el panel de estado
-    function updateMachineStatus(message) {
-      const state = message.substring(2).trim();
-      const stateText = machineStates[state] || `Desconocido (${state})`;
-      document.getElementById("currentState").textContent = stateText;
-    }
-
-    function processCountData(data) {
-      try {
-        const type = data.substring(0, 3);
-        const countData = data.substring(3);
-
-        // Procesamos asegurando todos los colores
-        const counts = parseCounts(countData);
-
-        if (type === "S->") {
-          systemTarget = { ...counts };
-          addLog(`Objetivo actualizado: ${JSON.stringify(counts)}`);
-        } else {
-          currentCount = { ...counts };
-          addLog(`Conteo actualizado: ${JSON.stringify(counts)}`);
-        }
-
-        updateClassificationView();
-      } catch (error) {
-        addLog(`Error procesando conteo: ${error.message}`);
-      }
-    }
-
-    function parseCounts(data) {
-      // Inicializamos con ceros para todos los colores posibles
-      const counts = { R: 0, G: 0, Y: 0, B: 0, O: 0, D: 0 };
-      console.log(data);
-      // Dividimos por espacios y procesamos cada par color:valor
-      data.split(" ").forEach((part) => {
-        if (part.includes(":")) {
-          const [color, value] = part.split(":");
-          if (color in counts) {
-            counts[color] = parseInt(value) || 0;
-          }
-        }
-      });
-
-      return counts;
-    }
-
-    function updateClassificationView() {
-      const colors = ["R", "G", "Y", "B", "O", "D"]; // Todos los colores definidos
-
-      if (isSystemMode) {
-        // Modo Sistema
-        document.getElementById("systemModeView").style.display = "block";
-        document.getElementById("userModeView").style.display = "none";
-
-        let systemHTML = '<div class="row">';
-        colors.forEach((color) => {
-          // Aseguramos valores numéricos (|| 0 maneja undefined/NaN)
-          const total = Number(systemTarget[color]) || 0;
-          const current = Number(currentCount[color]) || 0;
-          const remaining = Math.max(0, total - current);
-
-          systemHTML += `
-        <div class="col-md-2 mb-2">
-          <div class="d-flex align-items-center">
-            <div class="color-box color-${color} me-2"></div>
-            <div>`;
-          if (color == "D") {
-            systemHTML += `<div><strong>${color}:</strong> ${current}</div>
-              <small class="text-muted">(Desechados)</small> `;
-          } else {
-            systemHTML += `<div><strong>${color}:</strong> ${current}/${total}</div>
-              <small class="text-muted">Faltan: ${remaining}</small>`;
-          }
-          systemHTML += `
-            </div>
-          </div>
-        </div>`;
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function () {
+            updateColorPreview();
+            setupConnectButton();
+            updateCountDisplays();
         });
-        systemHTML += "</div>"; // Cierre del row
-        document.getElementById("systemTarget").innerHTML = systemHTML;
-      } else {
-        // Modo Usuario
-        document.getElementById("systemModeView").style.display = "none";
-        document.getElementById("userModeView").style.display = "block";
 
-        let userHTML = '<div class="row">';
-        colors.forEach((color) => {
-          const count = Number(currentCount[color]) || 0;
-          userHTML += `
-           <div class="row col-md-2 mb-2">
-          <div class="d-flex align-items-center">
-            <div class="color-box color-${color} me-2"></div>
-            <div>
-             <span>${color}: <strong>${count}</strong> unidades</span>
-            </div>
-          </div>
-        </div>
-      `;
-        });
-        userHTML += "</div>"; // Cierre del row
-        document.getElementById("userCount").innerHTML = userHTML;
-      }
-    }
-
-    function processMessage(message) {
-      // Limpiar y dividir múltiples mensajes en caso de buffer acumulado
-      const cleanMessage = message.replace(/\r\n/g, "\n").trim();
-      const messages = cleanMessage.split("\n");
-
-      messages.forEach((msg) => {
-        if (msg.startsWith("S:")) {
-          updateMachineStatus(msg);
-          addLog(`Estado: ${machineStates[msg.substring(2).trim()] || msg}`);
-        } else if (msg.startsWith("M:")) {
-          updateMachineMode(msg);
-          addLog(`Modo: ${machineModes[msg.substring(2).trim()] || msg}`);
-        } else if (msg.startsWith("C:")) {
-          processCountData(msg.substring(2).trim());
-        } else if (msg.length > 0) {
-          addLog(msg);
-        }
-      });
-    }
-
-    // Modifica la función addLog para incluir updateMachineStatus
-    function addLog(message) {
-      const logEntry = document.createElement("div");
-      logEntry.className = "log-entry";
-      logEntry.textContent = `> ${new Date().toLocaleTimeString()} ${message}`;
-      logElement.prepend(logEntry);
-    }
-
-    async function readData() {
-      try {
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-
-          const text = new TextDecoder().decode(value);
-          receivedBuffer += text;
-
-          // Procesar solo si tenemos un mensaje completo (termina en \n)
-          if (receivedBuffer.includes("\n")) {
-            const messages = receivedBuffer.split("\n");
-            receivedBuffer = messages.pop(); // Guardar mensaje incompleto para el próximo ciclo
-
-            messages.forEach((msg) => {
-              if (msg.trim().length > 0) {
-                processMessage(msg.trim());
-              }
+        // Configurar el botón de conexión
+        function setupConnectButton() {
+            const connectBtn = document.getElementById('connectBtn');
+            connectBtn.addEventListener('click', async () => {
+                if (port && port.readable) {
+                    // Desconectar
+                    await disconnectSerial();
+                } else {
+                    // Conectar
+                    await connectSerial();
+                }
             });
-          }
         }
-      } catch (error) {
-        if (error.name !== "AbortError") {
-          addLog(`Error de lectura: ${error.message}`);
+
+        // Funciones para conexión Serial
+        async function connectSerial() {
+            try {
+                logMessage('Solicitando puerto serial (baudRate: 115200)...');
+                port = await navigator.serial.requestPort();
+                await port.open({ baudRate: 115200 });
+
+                logMessage('Conectado al dispositivo (Serial Bluetooth)');
+                document.getElementById('connectionStatus').textContent = 'Conectado';
+                document.getElementById('connectionStatus').className = 'connection-status connected';
+                document.getElementById('connectBtn').textContent = 'Desconectar';
+                document.getElementById('connectBtn').className = 'btn btn-danger';
+
+                // Leer datos del puerto serial
+                reader = port.readable.getReader();
+                readData();
+
+            } catch (error) {
+                logMessage(`Error de conexión: ${error.message}`);
+            }
         }
-      } finally {
-        reader.releaseLock();
-      }
-    }
 
-    // Conectar al ESP32
-    connectBtn.addEventListener("click", async () => {
-      try {
-        addLog("Solicitando puerto serial (baudRate: 115200)...");
-        port = await navigator.serial.requestPort();
-        await port.open({ baudRate: 115200 });
-        addLog("Conectado al AT_MM_Machine (Serial Bluetooth)");
-        connectionStatus.textContent = "Conectado";
-        connectionStatus.className = "mt-2 text-success";
-        // Leer datos del puerto serial
-        reader = port.readable.getReader();
-        readData();
-      } catch (error) {
-        addLog(`Error de conexión: ${error.message}`);
-      }
-    });
+        async function disconnectSerial() {
+            try {
+                if (reader) {
+                    await reader.cancel();
+                    await reader.releaseLock();
+                    reader = null;
+                }
 
-    // Desconectar
-    disconnectBtn.addEventListener("click", async () => {
-      if (reader) {
-        await reader.cancel();
-        reader = null;
-      }
-      if (port) {
-        await port.close();
-        port = null;
-      }
-      addLog("Desconectado del ESP32");
-      connectionStatus.textContent = "No conectado";
-      connectionStatus.className = "mt-2 text-danger";
-    });
+                if (port) {
+                    await port.close();
+                    port = null;
+                }
 
-    // Enviar mensaje
-    sendBtn.addEventListener("click", async () => {
-      if (!port || !port.writable) {
-        addLog("Error: No hay conexión activa");
-        return;
-      }
-      const message = messageInput.value;
-      if (!message) {
-        addLog("Error: Mensaje vacío");
-        return;
-      }
-      try {
-        const writer = port.writable.getWriter();
-        await writer.write(new TextEncoder().encode(message + "\n"));
-        writer.releaseLock();
-        addLog(`Enviado: ${message}`);
-        messageInput.value = "";
-      } catch (error) {
-        addLog(`Error al enviar: ${error.message}`);
-      }
-    });
+                logMessage('Desconectado del dispositivo');
+                document.getElementById('connectionStatus').textContent = 'Desconectado';
+                document.getElementById('connectionStatus').className = 'connection-status disconnected';
+                document.getElementById('connectBtn').textContent = 'Conectar Bluetooth';
+                document.getElementById('connectBtn').className = 'btn btn-success';
 
-    // Limpiar consola
-    clearLogBtn.addEventListener("click", () => {
-      logElement.innerHTML = "";
-    });
-
-    // Enviar al presionar Enter
-    messageInput.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") sendBtn.click();
-    });
-
-    // Función para enviar comandos Bluetooth
-    async function sendCommand(command) {
-      if (!port || !port.writable) {
-        addLog("Error: No hay conexión Bluetooth activa");
-        return;
-      }
-      try {
-        const writer = port.writable.getWriter();
-        await writer.write(new TextEncoder().encode(command + "\n"));
-        writer.releaseLock();
-        addLog(`Comando enviado: ${command}`);
-      } catch (error) {
-        addLog(`Error enviando comando: ${error.message}`);
-      }
-    }
-
-    // Manejador de botones de comandos
-    document.querySelectorAll(".command-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const command = btn.getAttribute("data-cmd");
-        sendCommand(command);
-      });
-    });
-
-    // Manejador del dropdown de colores
-    document.querySelectorAll(".color-option").forEach((item) => {
-      item.addEventListener("click", (e) => {
-        e.preventDefault();
-        const colorValue = item.getAttribute("data-value");
-        sendCommand(`SC${colorValue}`);
-        document.getElementById(
-          "colorDropdown"
-        ).textContent = `Contenedor: ${item.textContent}`;
-      });
-    });
-
-    // Manejador para mover servo
-    document
-      .getElementById("moveClasificadorBtn")
-      .addEventListener("click", () => {
-        const position = document.getElementById(
-          "clasificadorPosition"
-        ).value;
-        if (position >= -10000 && position <= 10000) {
-          sendCommand(`SS${position}`);
-        } else {
-          addLog("Error: Posición debe ser 10000-10000");
+            } catch (error) {
+                logMessage(`Error al desconectar: ${error.message}`);
+            }
         }
-      });
 
-    // Manejador para mover servo
-    document.getElementById("moveRuedaBtn").addEventListener("click", () => {
-      const position = document.getElementById("ruedaPosition").value;
-      if (position >= -10000 && position <= 10000) {
-        sendCommand(`WS${position}`);
-      } else {
-        addLog("Error: Posición debe ser 10000-10000");
-      }
-    });
-  </script>
+        async function readData() {
+            try {
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) {
+                        // Permitir que la secuencia serial se cierre correctamente.
+                        reader.releaseLock();
+                        break;
+                    }
+
+                    if (value) {
+                        // Convertir el valor recibido a una cadena y agregar al buffer
+                        const receivedString = new TextDecoder().decode(value);
+                        buffer += receivedString;
+
+                        // Procesar el buffer para encontrar mensajes completos
+                        processBuffer();
+                    }
+                }
+            } catch (error) {
+                logMessage(`Error al leer datos: ${error.message}`);
+            }
+        }
+
+        function processBuffer() {
+            // Buscar líneas completas en el buffer
+            let lineEndIndex;
+            while ((lineEndIndex = buffer.indexOf('\n')) >= 0) {
+                // Extraer la línea completa
+                const line = buffer.substring(0, lineEndIndex).trim();
+                // Eliminar la línea procesada del buffer
+                buffer = buffer.substring(lineEndIndex + 1);
+
+                if (line) {
+                    processReceivedData(line);
+                }
+            }
+        }
+
+        // Función mejorada para procesar mensajes con JSON
+        function processReceivedData(line) {
+            logMessage('Recibido: ' + line);
+
+            // Encontrar la posición donde comienza el JSON
+            const jsonStartIndex = line.indexOf('{');
+
+            if (jsonStartIndex === -1) {
+                // Si no hay JSON, procesar normalmente
+                processStandardMessage(line);
+                return;
+            }
+
+            // Separar la parte del comando y la parte JSON
+            const commandPart = line.substring(0, jsonStartIndex);
+            const jsonPart = line.substring(jsonStartIndex);
+
+            // Procesar la parte del comando (eliminar la última coma si existe)
+            const cleanCommand = commandPart.endsWith(',') ?
+                commandPart.substring(0, commandPart.length - 1) : commandPart;
+
+            const parts = cleanCommand.split(',');
+
+            if (parts.length === 3) {
+                const commandId = parts[0];
+                const deviceId = parseInt(parts[1]);
+                const propertyId = parseInt(parts[2]);
+                const value = jsonPart; // El JSON completo
+
+                if (deviceId === 12) { // SYSTEM COUNT
+                    updateSystemCounts(value);
+                }
+                if (deviceId === 13) { // USER COUNT
+                    updateUserCounts(value);
+                }
+                if (deviceId === 14) { // TARGET COUNT
+                    updateTargetCounts(value);
+                }
+            }
+        }
+
+        function processStandardMessage(line) {
+            logMessage('Recibido: ' + line);
+
+            // Parsear el mensaje
+            const parts = line.split(',');
+
+            if (parts.length === 4) {
+                const commandId = parts[0];
+                const deviceId = parseInt(parts[1]);
+                const propertyId = parseInt(parts[2]);
+                const value = parts[3];
+
+                // Procesar según el propertyId
+                if (propertyId === PROPERTY_TYPE.MENSAJE) {
+                    addMessage(value);
+                } else if (propertyId === PROPERTY_TYPE.COLOR) {
+                    addColorToHistory(value);
+                    document.getElementById('colorReadResult').textContent = `Color: ${colorMap[value]?.name || 'Desconocido'}`;
+                } else if (propertyId === PROPERTY_TYPE.LEER) {
+                    // Procesar lecturas
+                    if (deviceId === 3) { // COLOR_SENSOR
+                        document.getElementById('colorReadResult').textContent = `Color: ${colorMap[value]?.name || 'Desconocido'}`;
+                    } else if (deviceId === 2) { // RFID_READER
+                        document.getElementById('rfidReadResult').textContent = `Tag: ${value}`;
+                    } else if (deviceId >= 8 && deviceId <= 11) { // Sensores de línea
+                        updateLineSensor(deviceId, value);
+                    }
+                } else if (propertyId === PROPERTY_TYPE.VALOR) {
+                    // Procesar valores (como tags RFID enviados)
+                    if (deviceId === 2) { // RFID_READER
+                        document.getElementById('rfidReadResult').textContent = `Tag: ${value}`;
+                    }
+                    if (deviceId === 8) { // SOMU
+                        document.getElementById('somuStatus').textContent = `${value}`;
+                    }
+                    if (deviceId === 9) { // SOMS
+                        document.getElementById('somsStatus').textContent = `${value}`;
+                    }
+                    if (deviceId === 10) { // SAMTP
+                        document.getElementById('samtpStatus').textContent = `${value}`;
+                    }
+                    if (deviceId === 11) { // SAMCP
+                        document.getElementById('samcpStatus').textContent = `${value}`;
+                    }
+                    if (deviceId === 12) { // SYSTEM COUNT
+                        updateSystemCounts(value);
+                    }
+                    if (deviceId === 13) { // USER COUNT
+                        addMessage("User count")
+                        updateUserCounts(value);
+                    }
+                    if (deviceId === 14) { // TARGET COUNT
+                        updateTargetCounts(value);
+                    }
+                    if (deviceId === 15) { // Machine State
+                        document.getElementById('machineState').textContent = `${value}`;
+                    }
+                    if (deviceId === 16) { // Operation Mode
+                        document.getElementById('operationMode').textContent = `${value}`;
+                    }
+                    if (deviceId === 17) { // Machine Classification Type
+                        document.getElementById('machineClassificationType').textContent = `${value}`;
+                    }
+                }
+            }
+        }
+
+        // Funciones para actualizar los conteos por color
+        // Funciones para actualizar los conteos por color con formato JSON
+        function updateUserCounts(countsJson) {
+            try {
+                // Convertir el string JSON a objeto JavaScript
+                // Reemplazar comillas simples por comillas dobles para JSON válido
+                const jsonString = countsJson.replace(/'/g, '"');
+                addMessage(jsonString)
+                const counts = JSON.parse(jsonString);
+                addMessage(counts)
+
+                // Actualizar los conteos
+                userCounts.A = counts.A || 0;
+                userCounts.B = counts.B || 0;
+                userCounts.C = counts.C || 0;
+                userCounts.D = counts.D || 0;
+                userCounts.E = counts.E || 0;
+
+                updateCountDisplays();
+            } catch (error) {
+                console.error('Error al procesar User Counts:', error);
+                logMessage(`Error en User Counts: ${error.message}`);
+            }
+        }
+
+        function updateSystemCounts(countsJson) {
+            try {
+                const jsonString = countsJson.replace(/'/g, '"');
+                const counts = JSON.parse(jsonString);
+
+                systemCounts.A = counts.A || 0;
+                systemCounts.B = counts.B || 0;
+                systemCounts.C = counts.C || 0;
+                systemCounts.D = counts.D || 0;
+                systemCounts.E = counts.E || 0;
+
+                updateCountDisplays();
+            } catch (error) {
+                console.error('Error al procesar System Counts:', error);
+                logMessage(`Error en System Counts: ${error.message}`);
+            }
+        }
+
+        function updateTargetCounts(countsJson) {
+            try {
+                const jsonString = countsJson.replace(/'/g, '"');
+                const counts = JSON.parse(jsonString);
+
+                targetCounts.A = counts.A || 0;
+                targetCounts.B = counts.B || 0;
+                targetCounts.C = counts.C || 0;
+                targetCounts.D = counts.D || 0;
+                targetCounts.E = counts.E || 0;
+
+                updateCountDisplays();
+
+                // Actualizar también los campos de entrada
+                document.getElementById('targetA').value = targetCounts.A;
+                document.getElementById('targetB').value = targetCounts.B;
+                document.getElementById('targetC').value = targetCounts.C;
+                document.getElementById('targetD').value = targetCounts.D;
+                document.getElementById('targetE').value = targetCounts.E;
+            } catch (error) {
+                console.error('Error al procesar Target Counts:', error);
+                logMessage(`Error en Target Counts: ${error.message}`);
+            }
+        }
+
+        // Función para actualizar la visualización de conteos
+        function updateCountDisplays() {
+            // Actualizar conteos de usuario
+            document.getElementById('userCountA').textContent = userCounts.A;
+            document.getElementById('userCountB').textContent = userCounts.B;
+            document.getElementById('userCountC').textContent = userCounts.C;
+            document.getElementById('userCountD').textContent = userCounts.D;
+            document.getElementById('userCountE').textContent = userCounts.E;
+
+            // Actualizar conteos del sistema
+            document.getElementById('systemCountA').textContent = systemCounts.A;
+            document.getElementById('systemCountB').textContent = systemCounts.B;
+            document.getElementById('systemCountC').textContent = systemCounts.C;
+            document.getElementById('systemCountD').textContent = systemCounts.D;
+            document.getElementById('systemCountE').textContent = systemCounts.E;
+
+            // Actualizar target counts
+            document.getElementById('targetCountA').textContent = targetCounts.A;
+            document.getElementById('targetCountB').textContent = targetCounts.B;
+            document.getElementById('targetCountC').textContent = targetCounts.C;
+            document.getElementById('targetCountD').textContent = targetCounts.D;
+            document.getElementById('targetCountE').textContent = targetCounts.E;
+        }
+
+        // Función para establecer el target count
+        // Función para establecer el target count (enviar como JSON)
+        function setTargetCount(deviceId) {
+            const targetA = document.getElementById('targetA').value;
+            const targetB = document.getElementById('targetB').value;
+            const targetC = document.getElementById('targetC').value;
+            const targetD = document.getElementById('targetD').value;
+            const targetE = document.getElementById('targetE').value;
+
+            // Crear array con los valores
+            const values = [
+                parseInt(targetA) || 0,
+                parseInt(targetB) || 0,
+                parseInt(targetC) || 0,
+                parseInt(targetD) || 0,
+                parseInt(targetE) || 0
+            ];
+
+            // Convertir a string separado por -
+            const targetString = values.join(' ');
+
+            // Enviar el dato (ejemplo: "1-5-1-2-1")
+            sendData(deviceId, PROPERTY_TYPE.VALOR, targetString);
+        }
+         
+        function getTargetCount(deviceId) {
+             // Enviar el dato (ejemplo: "1-5-1-2-1")
+            sendData(deviceId, PROPERTY_TYPE.LEER, "0");
+         }
+
+        // Resto de funciones existentes...
+        async function sendData(deviceId, propertyId, value) {
+            if (!port || !port.writable) {
+                logMessage('Error: No conectado al dispositivo');
+                return;
+            }
+
+            // Generar un commandId (podría ser un timestamp o contador)
+            const commandId = 1;
+
+            // Formar el mensaje según el formato especificado
+            const message = `${commandId},${deviceId},${propertyId},${value}\n`;
+
+            try {
+                const writer = port.writable.getWriter();
+                const data = new TextEncoder().encode(message);
+                await writer.write(data);
+                writer.releaseLock();
+
+                logMessage('Enviado: ' + message.trim());
+            } catch (error) {
+                logMessage('Error al enviar datos: ' + error.message);
+            }
+        }
+
+        function logMessage(message) {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString();
+            logContainer.innerHTML = `[${timestamp}] ${message}<br>${logContainer.innerHTML}`;
+        }
+
+        function addMessage(message) {
+            const messagesContainer = document.getElementById('messagesContainer');
+            const timestamp = new Date().toLocaleTimeString();
+            messagesContainer.innerHTML = `[${timestamp}] ${message}<br>${messagesContainer.innerHTML}`;
+        }
+
+        function addColorToHistory(colorCode) {
+            // Agregar el color al historial
+            receivedColors.unshift(colorCode);
+
+            // Mantener solo los últimos 5 colores
+            if (receivedColors.length > 5) {
+                receivedColors.pop();
+            }
+
+            // Actualizar la visualización
+            const colorHistory = document.getElementById('colorHistory');
+            colorHistory.innerHTML = '';
+
+            receivedColors.forEach(colorCode => {
+                const colorInfo = colorMap[colorCode] || { name: 'Desconocido', color: '#9E9E9E' };
+
+                const colorElement = document.createElement('div');
+                colorElement.className = 'text-center';
+                colorElement.innerHTML = `
+                    <div class="color-box" style="background-color: ${colorInfo.color};"></div>
+                    <div>${colorInfo.name}</div>
+                `;
+
+                colorHistory.appendChild(colorElement);
+            });
+        }
+
+        function clearLog() {
+            document.getElementById('logContainer').innerHTML = '';
+            document.getElementById('messagesContainer').innerHTML = '';
+        }
+
+        // Funciones para dispositivos (mantener las existentes)
+        function moveTransport() {
+            const steps = document.getElementById('transportSteps').value;
+            if (steps) {
+                sendData(4, PROPERTY_TYPE.POSICION, steps);
+            }
+        }
+
+        function transportMaxSpeed() {
+            const speed = document.getElementById('transportSpeed').value;
+            if (speed) {
+                sendData(4, PROPERTY_TYPE.VELOCIDAD, speed);
+            }
+        }
+
+        function calibrateTransport() {
+            sendData(4, PROPERTY_TYPE.CALIBRAR, '1');
+        }
+
+        function detenerTransport() {
+            sendData(4, PROPERTY_TYPE.OF, '1');
+        }
+
+        function continuarTransport() {
+            sendData(4, PROPERTY_TYPE.LEER, '1');
+        }
+
+        function autoTrigger(enabled) {
+            const value = enabled ? '1' : '0';
+            sendData(4, PROPERTY_TYPE.OPERACION, value);
+        }
+
+        function autoPause(enabled) {
+            const value = enabled ? '1' : '0';
+            sendData(4, PROPERTY_TYPE.CLASIFICACION, value);
+        }
+
+        function moverTransport() {
+            sendData(4, PROPERTY_TYPE.ON, '1000');
+        }
+
+        function moveContainer() {
+            const container = document.getElementById('containerSelect').value;
+            sendData(5, PROPERTY_TYPE.POSICION, container);
+        }
+
+        function calibrateContainer() {
+            sendData(5, PROPERTY_TYPE.CALIBRAR, '1');
+        }
+
+        function disableContainer() {
+            sendData(5, PROPERTY_TYPE.OF, '1');
+        }
+
+        function containersMaxSpeed() {
+            const speed = document.getElementById('containersSpeed').value;
+            if (speed) {
+                sendData(5, PROPERTY_TYPE.VELOCIDAD, speed);
+            }
+        }
+
+        function updateColorPreview() {
+            const r = document.getElementById('redValue').value;
+            const g = document.getElementById('greenValue').value;
+            const b = document.getElementById('blueValue').value;
+            document.getElementById('colorPreview').style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+
+            // Actualizar también los campos de texto
+            document.getElementById('redValueText').value = r;
+            document.getElementById('greenValueText').value = g;
+            document.getElementById('blueValueText').value = b;
+        }
+
+        function updateColorSlider(inputElement, sliderId) {
+            const value = Math.min(255, Math.max(0, parseInt(inputElement.value) || 0));
+            document.getElementById(sliderId).value = value;
+            updateColorPreview();
+        }
+
+
+        function setLEDColor() {
+            const r = document.getElementById('redValue').value;
+            const g = document.getElementById('greenValue').value;
+            const b = document.getElementById('blueValue').value;
+
+            // Primero establecer el color
+            sendData(6, PROPERTY_TYPE.COLOR, `${r}-${g}-${b}`);
+        }
+
+        function setLEDBrillo() {
+
+            const brightness = document.getElementById('brightness').value;
+
+
+            // Luego establecer el brillo
+            sendData(6, PROPERTY_TYPE.BRILLO, brightness / 100);
+        }
+
+        function turnOnLED() {
+            sendData(6, PROPERTY_TYPE.ON, '1');
+        }
+
+        function turnOffLED() {
+            sendData(6, PROPERTY_TYPE.OF, '1');
+        }
+
+        function readColor() {
+            sendData(3, PROPERTY_TYPE.LEER, '1');
+        }
+
+        function setColor() {
+            const color = document.getElementById('colorSelect').value;
+            sendData(3, PROPERTY_TYPE.VALOR, color);
+        }
+
+        function readLineSensor(sensorId) {
+            sendData(sensorId, PROPERTY_TYPE.LEER, '1');
+        }
+
+        function updateLineSensor(sensorId, value) {
+            let statusElement;
+            switch (sensorId) {
+                case 8: // SOMU
+                    statusElement = document.getElementById('somuStatus');
+                    break;
+                case 9: // SOMS
+                    statusElement = document.getElementById('somsStatus');
+                    break;
+                case 10: // SAMTP
+                    statusElement = document.getElementById('samtpStatus');
+                    break;
+                case 11: // SAMCP
+                    statusElement = document.getElementById('samcpStatus');
+                    break;
+            }
+
+            if (statusElement) {
+                statusElement.textContent = value === '1' ? 'Activo' : 'Inactivo';
+                statusElement.className = value === '1' ? 'sensor-status active-sensor' : 'sensor-status inactive-sensor';
+            }
+        }
+
+        function readRFID() {
+            sendData(2, PROPERTY_TYPE.LEER, '1');
+        }
+
+        function sendRFID() {
+            const tag = document.getElementById('rfidTag').value;
+            if (tag) {
+                sendData(2, PROPERTY_TYPE.VALOR, tag);
+            }
+        }
+
+        function toggleDebug(deviceId, enabled) {
+            const simulationValue = enabled ? '1' : '0';
+            sendData(deviceId, PROPERTY_TYPE.VALOR, simulationValue);
+        }
+
+        // Función para manejar el cambio de modo simulación para cada dispositivo
+        function toggleSimulation(deviceId, enabled) {
+            const simulationValue = enabled ? '1' : '0';
+            sendData(deviceId, PROPERTY_TYPE.TEST, simulationValue);
+        }
+
+        // Funciones para el log y mensajes
+        function logMessage(message) {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString();
+            logContainer.innerHTML = `[${timestamp}] ${message}<br>${logContainer.innerHTML}`;
+        }
+
+        function addMessage(message) {
+            const messagesContainer = document.getElementById('messagesContainer');
+            const timestamp = new Date().toLocaleTimeString();
+            messagesContainer.innerHTML = `[${timestamp}] ${message}<br>${messagesContainer.innerHTML}`;
+        }
+
+        function addColorToHistory(colorCode) {
+            // Agregar el color al historial
+            receivedColors.unshift(colorCode);
+
+            // Mantener solo los últimos 5 colores
+            if (receivedColors.length > 5) {
+                receivedColors.pop();
+            }
+
+            // Actualizar la visualización
+            const colorHistory = document.getElementById('colorHistory');
+            colorHistory.innerHTML = '';
+
+            receivedColors.forEach(colorCode => {
+                const colorInfo = colorMap[colorCode] || { name: 'Desconocido', color: '#9E9E9E' };
+
+                const colorElement = document.createElement('div');
+                colorElement.className = 'text-center';
+                colorElement.innerHTML = `
+                    <div class="color-box" style="background-color: ${colorInfo.color};"></div>
+                    <div>${colorInfo.name}</div>
+                `;
+
+                colorHistory.appendChild(colorElement);
+            });
+        }
+
+        function clearLog() {
+            document.getElementById('logContainer').innerHTML = '';
+            document.getElementById('messagesContainer').innerHTML = '';
+        }
+
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>
